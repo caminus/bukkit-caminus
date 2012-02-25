@@ -17,7 +17,7 @@ package us.camin;
     along with Caminus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.bukkit.Location;
+import org.bukkit.configuration.Configuration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 public class Plugin extends JavaPlugin {
 
 	Logger log = Logger.getLogger("Caminus");//Define your logger
+    private JoinListener m_listener;
 
 	public void onDisable() {
 		log.info("[Caminus] Plugin disabled");
@@ -37,6 +38,11 @@ public class Plugin extends JavaPlugin {
         log.info("[Caminus] Plugin enabled");
 
         PluginManager pm = this.getServer().getPluginManager();
-        pm.registerEvent(Event.Type.PLAYER_LOGIN, new JoinListener(), Event.Priority.Normal, this);
+        m_listener = new JoinListener();
+        Configuration conf = getConfig();
+        conf.addDefault("url", "http://camin.us/api/validate/");
+        String url = conf.getString("url");
+        m_listener.setURL(url);
+        pm.registerEvent(Event.Type.PLAYER_LOGIN, m_listener, Event.Priority.Normal, this);
 	}
 }

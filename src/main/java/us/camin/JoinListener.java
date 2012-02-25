@@ -22,14 +22,22 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+import java.net.HttpURLConnection;
+import java.util.logging.Logger;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
 public class JoinListener extends PlayerListener {
+	Logger log = Logger.getLogger("Caminus.Join");
+    private String m_url;
+
     public JoinListener() {
+    }
+
+    public void setURL(String url) {
+        m_url = url;
     }
 
     public static void main(String[] args) throws IOException, MalformedURLException {
@@ -43,8 +51,8 @@ public class JoinListener extends PlayerListener {
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player p = event.getPlayer();
         try {
-        if (!isUserAuthed(p.getName()))
-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "An active camin.us account is required.");
+            if (!isUserAuthed(p.getName()))
+                event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "An active camin.us account is required.");
         } catch (MalformedURLException e) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Auth URL is invalid!");
         } catch (IOException e) {
@@ -53,14 +61,12 @@ public class JoinListener extends PlayerListener {
     }
 
     public boolean isUserAuthed(String user) throws IOException, MalformedURLException {
-        URL authServer = new URL("http://dev.camin.us/api/validate/"+user);
-        URLConnection conn = authServer.openConnection();
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        boolean ret;
-        if (in.readLine().equals("false"))
-            ret = false;
-        ret = true;
-        in.close();
-        return ret;
+        URL authServer = new URL(m_url+user);
+        log.info("Authing "+user+" against "+authServer);
+        HttpURLConnection conn = (HttpURLConnection)authServer.openConnection();
+        int code = conn.getResponseCode();
+        if (code >= 200 && code <= 300)
+            return true;
+        return false;
     }
 }
