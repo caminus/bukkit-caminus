@@ -112,7 +112,7 @@ public class JoinListener extends PlayerListener {
         log.info("Authing "+user+" against "+authServer);
         HttpURLConnection conn = (HttpURLConnection)authServer.openConnection();
         int code = conn.getResponseCode();
-        if (code >= 200 && code <= 300)
+        if (code >= 200 && code < 300)
             return true;
         return false;
     }
