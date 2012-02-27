@@ -40,7 +40,7 @@ public class Plugin extends JavaPlugin {
         PluginManager pm = this.getServer().getPluginManager();
         m_listener = new JoinListener();
         Configuration conf = getConfig();
-        conf.addDefault("url", "http://camin.us/api/validate/");
+        conf.addDefault("url", "http://camin.us/api/");
         String url = conf.getString("url");
         m_listener.setURL(url);
         pm.registerEvent(Event.Type.PLAYER_LOGIN, m_listener, Event.Priority.Normal, this);
