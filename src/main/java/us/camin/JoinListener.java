@@ -57,17 +57,16 @@ public class JoinListener extends PlayerListener {
 
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player p = event.getPlayer();
+        if (p.hasPermission("caminus.whitelisted"))
+            return;
         try {
             if (!isUserAuthed(p.getName())) {
                 event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "An active camin.us account is required.");
-                return;
             }
         } catch (MalformedURLException e) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Auth URL is invalid!");
-            return;
         } catch (IOException e) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Camin.us auth server seems down.");
-            return;
         }
         String[] motd = null;
         try {
