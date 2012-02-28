@@ -31,6 +31,7 @@ import java.util.Scanner;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -68,19 +69,23 @@ public class JoinListener extends PlayerListener {
         } catch (IOException e) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Camin.us auth server seems down.");
         }
+    }
+
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player p = event.getPlayer();
         String[] motd = null;
         try {
             motd = fetchMOTD(p.getName());
         } catch (MalformedURLException e) {
-            p.chat("Could not fetch MOTD: Bad URL");
+            p.sendMessage("Could not fetch MOTD: Bad URL");
         } catch (IOException e) {
-            p.chat("Could not fetch MOTD: Communication error");
+            p.sendMessage("Could not fetch MOTD: Communication error");
         } catch (JSONException e) {
-            p.chat("Could not fetch MOTD: Bad JSON");
+            p.sendMessage("Could not fetch MOTD: Bad JSON");
         }
         if (motd != null) {
             for(String msg : motd) {
-                p.chat(msg);
+                p.sendMessage(msg);
             }
         }
     }
