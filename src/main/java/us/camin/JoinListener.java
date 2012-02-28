@@ -88,6 +88,7 @@ public class JoinListener extends PlayerListener {
 
     public String[] fetchMOTD(String user) throws IOException, MalformedURLException, JSONException {
         URL motdService = new URL(m_url+"motd/"+user);
+        log.info("Fetching MOTD for "+user+" from "+motdService);
         HttpURLConnection conn = (HttpURLConnection)motdService.openConnection();
         BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
         String jsonStr;
