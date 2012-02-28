@@ -44,5 +44,6 @@ public class Plugin extends JavaPlugin {
         String url = conf.getString("url");
         m_listener.setURL(url);
         pm.registerEvent(Event.Type.PLAYER_LOGIN, m_listener, Event.Priority.Normal, this);
+        pm.registerEvent(Event.Type.PLAYER_JOIN, m_listener, Event.Priority.Normal, this);
 	}
 }
