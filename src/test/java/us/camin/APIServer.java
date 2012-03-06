@@ -49,10 +49,12 @@ public class APIServer {
     private class ValidateServlet extends HttpServlet {
         public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
             resp.setContentType("application/json");
+            ServletOutputStream out = resp.getOutputStream();
+
             if (req.getPathInfo().equals("/TestUser"))
-                resp.sendError(200);
+                out.println("{valid: true, error: ''}");
             else
-                resp.sendError(404);
+                out.println("{valid: false, error: 'Test Failure'}");
         }
     }
 
