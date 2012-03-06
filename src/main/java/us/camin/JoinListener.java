@@ -48,14 +48,6 @@ public class JoinListener extends PlayerListener {
         m_url = url;
     }
 
-    public static void main(String[] args) throws IOException, MalformedURLException {
-        JoinListener listener = new JoinListener();
-        if (listener.isUserAuthed(args[0]))
-            System.out.println("Yes!");
-        else
-            System.out.println("No!");
-    }
-
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player p = event.getPlayer();
         if (p.hasPermission("caminus.whitelisted"))
@@ -68,6 +60,8 @@ public class JoinListener extends PlayerListener {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Auth URL is invalid!");
         } catch (IOException e) {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Camin.us auth server seems down.");
+        } catch (JSONException e) {
+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "Bad auth server response.");
         }
     }
 
@@ -112,12 +106,21 @@ public class JoinListener extends PlayerListener {
         return ret;
     }
 
-    public boolean isUserAuthed(String user) throws IOException, MalformedURLException {
+    public boolean isUserAuthed(String user) throws IOException, MalformedURLException, JSONException {
         URL authServer = new URL(m_url+"validate/"+user);
         log.info("Authing "+user+" against "+authServer);
         HttpURLConnection conn = (HttpURLConnection)authServer.openConnection();
-        int code = conn.getResponseCode();
-        if (code >= 200 && code < 300)
+        BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
+        String jsonStr;
+        try {
+            jsonStr = new java.util.Scanner(in).useDelimiter("\\A").next();
+        } catch (java.util.NoSuchElementException e) {
+            jsonStr = "";
+        }
+        in.close();
+        JSONObject jsonObj = new JSONObject(jsonStr);
+        boolean valid = jsonObj.optBoolean("valid");
+        if (valid)
             return true;
         return false;
     }

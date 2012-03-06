@@ -41,11 +41,11 @@ public class JoinTest {
         server.stop();
     }
 
-    @Test public void validUser() throws IOException {
+    @Test public void validUser() throws IOException, JSONException {
         assertTrue(listener.isUserAuthed("TestUser"));
     }
 
-    @Test public void invaliduser() throws IOException {
+    @Test public void invaliduser() throws IOException, JSONException {
         assertFalse(listener.isUserAuthed("InvalidUser"));
     }
 
