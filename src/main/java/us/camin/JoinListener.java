@@ -29,7 +29,8 @@ import java.util.logging.Logger;
 import java.util.Scanner;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.Listener;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
@@ -37,7 +38,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-public class JoinListener extends PlayerListener {
+public class JoinListener implements Listener {
 	Logger log = Logger.getLogger("Caminus.Join");
     private String m_url;
 
@@ -48,6 +49,8 @@ public class JoinListener extends PlayerListener {
         m_url = url;
     }
 
+
+    @EventHandler
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player p = event.getPlayer();
         if (p.hasPermission("caminus.whitelisted"))
@@ -65,6 +68,7 @@ public class JoinListener extends PlayerListener {
         }
     }
 
+    @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         String[] motd = null;
