@@ -1,0 +1,17 @@
+<assembly>
+    <id>bukkit</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory/>
+            <unpack>true</unpack>
+            <includes>
+                <include>us.camin:Caminus</include>
+                <include>org.json:json</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
