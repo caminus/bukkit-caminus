@@ -52,9 +52,9 @@ public class APIServer {
             ServletOutputStream out = resp.getOutputStream();
 
             if (req.getPathInfo().equals("/TestUser"))
-                out.println("{valid: true, error: ''}");
+                out.println("{valid: true, error: '', permissions: ['*']}");
             else
-                out.println("{valid: false, error: 'Test Failure'}");
+                out.println("{valid: false, error: 'Test Failure', permissions: []}");
         }
     }
 

@@ -25,24 +25,32 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import us.camin.api.Server;
+
 public class Plugin extends JavaPlugin {
 
 	Logger log = Logger.getLogger("Caminus");//Define your logger
+    private Server m_api;
     private JoinListener m_listener;
+
+    public Server api() {
+        return m_api;
+    }
 
 	public void onDisable() {
 		log.info("[Caminus] Plugin disabled");
+        m_api = null;
 	}
 
 	public void onEnable() {
         log.info("[Caminus] Plugin enabled");
 
         PluginManager pm = this.getServer().getPluginManager();
-        m_listener = new JoinListener();
+        m_listener = new JoinListener(this);
         Configuration conf = getConfig();
         conf.addDefault("url", "http://camin.us/api/");
         String url = conf.getString("url");
-        m_listener.setURL(url);
+        m_api = new Server(url);
         pm.registerEvents(m_listener, this);
 	}
 }

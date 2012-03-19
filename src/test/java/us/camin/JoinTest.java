@@ -25,16 +25,16 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-import us.camin.JoinListener;
+import us.camin.api.Server;
+import us.camin.api.ValidationResponse;
 
 public class JoinTest {
-    private JoinListener listener;
+    private Server api;
     private APIServer server;
     @Before public void setup() throws Exception {
         server = new APIServer();
         server.start();
-        listener = new JoinListener();
-        listener.setURL("http://localhost:8001/api/");
+        api = new Server("http://localhost:8001/api/");
     }
 
     @After public void teardown() throws Exception {
@@ -42,16 +42,22 @@ public class JoinTest {
     }
 
     @Test public void validUser() throws IOException, JSONException {
-        assertTrue(listener.isUserAuthed("TestUser"));
+        ValidationResponse resp = api.validatePlayer("TestUser");
+        assertTrue(resp.valid);
+        assertNotNull(resp.permissions);
+        assertTrue(resp.permissions.length>0);
     }
 
     @Test public void invaliduser() throws IOException, JSONException {
-        assertFalse(listener.isUserAuthed("InvalidUser"));
+        ValidationResponse resp = api.validatePlayer("InvalidUser");
+        assertFalse(resp.valid);
+        assertNotNull(resp.permissions);
+        assertEquals(resp.permissions.length, 0);
     }
 
     @Test public void motd() throws IOException, JSONException {
         String[] goodMOTD = {"Test MOTD"};
-        String[] motd = listener.fetchMOTD("TestUser");
+        String[] motd = api.fetchMOTD("TestUser");
         assertArrayEquals(null, goodMOTD, motd);
     }
 }
