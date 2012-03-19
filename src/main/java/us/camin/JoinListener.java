@@ -64,17 +64,6 @@ public class JoinListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Player p = event.getPlayer();
-        String[] motd = null;
-        try {
-            motd = m_plugin.api().fetchMOTD(p.getName());
-        } catch (IOException e) {
-            p.sendMessage("Could not fetch MOTD: Communication error");
-        }
-        if (motd != null) {
-            for(String msg : motd) {
-                p.sendMessage(msg);
-            }
-        }
+        m_plugin.sendMOTD(event.getPlayer());
     }
 }

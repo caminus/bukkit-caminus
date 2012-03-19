@@ -1,3 +1,19 @@
 name: Caminus
 main: us.camin.Plugin
-version: 0.2
+author: Trever Fischer <team@camin.us>
+website: http://camin.us/
+version: ${version}
+commands:
+    motd:
+        description: Displays the MOTD
+        usage: /<command>
+permissions:
+    caminus.*:
+        default: op
+        description: Allows use of all caminus permissions
+        children:
+            caminus.whitelisted: true
+    caminus.whitelisted:
+        default: op
+        description: Allows user to bypass caminus API whitelisting
+
