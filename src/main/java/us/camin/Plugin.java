@@ -49,7 +49,6 @@ public class Plugin extends JavaPlugin {
 
 	public void onEnable() {
         PluginManager pm = this.getServer().getPluginManager();
-        m_motdCommand = new MOTDCommand(this);
         m_listener = new JoinListener(this);
         Configuration conf = getConfig();
         conf.addDefault("url", "http://camin.us/api/");
