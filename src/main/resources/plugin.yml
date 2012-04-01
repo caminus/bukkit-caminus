@@ -7,6 +7,9 @@ commands:
     motd:
         description: Displays the MOTD
         usage: /<command>
+    vomit:
+        description: Causes a player to vomit blocks
+        usage: /<command> player quantity item
 permissions:
     caminus.*:
         default: op
@@ -14,9 +17,13 @@ permissions:
         children:
             caminus.whitelisted: true
             caminus.freedoorday: true
+            caminus.vomit: true
     caminus.freedoorday:
         default: false
         description: Enables free half door day
+    caminus.vomit:
+        default: op
+        description: Enables /vomit
     caminus.whitelisted:
         default: op
         description: Allows user to bypass caminus API whitelisting

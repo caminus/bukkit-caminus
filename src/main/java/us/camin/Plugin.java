@@ -37,6 +37,7 @@ public class Plugin extends JavaPlugin {
     private Server m_api;
     private JoinListener m_listener;
     private MOTDCommand m_motdCommand;
+    private VomitCommand m_vomitCommand;
 
     public Server api() {
         return m_api;
@@ -58,6 +59,8 @@ public class Plugin extends JavaPlugin {
 
         m_motdCommand = new MOTDCommand(this);
         getCommand("motd").setExecutor(m_motdCommand);
+        m_vomitCommand = new VomitCommand(this);
+        getCommand("vomit").setExecutor(m_vomitCommand);
 
         log.info("[Caminus] Plugin enabled");
 	}
