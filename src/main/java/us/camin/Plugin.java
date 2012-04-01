@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.inventory.ItemStack;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -61,6 +62,14 @@ public class Plugin extends JavaPlugin {
 
         log.info("[Caminus] Plugin enabled");
 	}
+
+    public void checkFreeHalfDoorDay(Player sender) {
+        if (sender.hasPermission("caminus.freedoorday")) {
+            ItemStack stack = new ItemStack(64); // Wooden door block
+            sender.getInventory().addItem(stack);
+            sender.sendMessage("Happy mandatory free half door day!");
+        }
+    }
 
     public void sendMOTD(CommandSender sender) {
         String[] motd = null;

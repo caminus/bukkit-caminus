@@ -65,5 +65,6 @@ public class JoinListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         m_plugin.sendMOTD(event.getPlayer());
+        m_plugin.checkFreeHalfDoorDay(event.getPlayer());
     }
 }

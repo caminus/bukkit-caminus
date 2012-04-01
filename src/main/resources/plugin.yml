@@ -13,6 +13,10 @@ permissions:
         description: Allows use of all caminus permissions
         children:
             caminus.whitelisted: true
+            caminus.freedoorday: true
+    caminus.freedoorday:
+        default: false
+        description: Enables free half door day
     caminus.whitelisted:
         default: op
         description: Allows user to bypass caminus API whitelisting
