@@ -3,6 +3,8 @@ main: us.camin.Plugin
 author: Trever Fischer <team@camin.us>
 website: http://camin.us/
 version: ${version}
+load: startup
+depend: [Vault]
 commands:
     motd:
         description: Displays the MOTD
