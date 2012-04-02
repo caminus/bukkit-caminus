@@ -18,15 +18,22 @@ package us.camin;
  */
 
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicePriority;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.inventory.ItemStack;
+
+import net.milkbowl.vault.economy.Economy;
+
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.IOException;
 
 import us.camin.api.Server;
@@ -53,14 +60,31 @@ public class Plugin extends JavaPlugin {
         m_listener = new JoinListener(this);
         Configuration conf = getConfig();
         conf.addDefault("url", "http://camin.us/api/");
+        conf.addDefault("name", "localhost");
+        conf.addDefault("secret", "");
         String url = conf.getString("url");
         m_api = new Server(url);
+        m_api.setServerName(conf.getString("name"));
+        m_api.setServerSecret(conf.getString("secret"));
+
+        if (!m_api.pingAPI()) {
+            log.log(Level.SEVERE, "Could not ping API server. Certain features may be disabled.");
+        }
+
         pm.registerEvents(m_listener, this);
 
         m_motdCommand = new MOTDCommand(this);
         getCommand("motd").setExecutor(m_motdCommand);
         m_vomitCommand = new VomitCommand(this);
         getCommand("vomit").setExecutor(m_vomitCommand);
+
+        CommandExecutor economyCommand = new EconomyCommand(this);
+        getCommand("balance").setExecutor(economyCommand);
+
+        log.info("[Caminus] Registering economy API");
+        Economy econAPI = new EconomyAPI(this);
+        ServicesManager sm = getServer().getServicesManager();
+        sm.register(Economy.class, econAPI, this, ServicePriority.High);
 
         log.info("[Caminus] Plugin enabled");
 	}
