@@ -12,6 +12,9 @@ commands:
     vomit:
         description: Causes a player to vomit blocks
         usage: /<command> player quantity item
+    balance:
+        description: Displays your balance
+        usage: /<command>
 permissions:
     caminus.*:
         default: op
