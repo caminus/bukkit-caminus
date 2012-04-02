@@ -58,8 +58,6 @@ public class JoinListener implements Listener {
             att.setPermission(perm, true);
         }
         p.recalculatePermissions();
-        log.info(p.hasPermission("caminus.whitelisted")+" "+p.hasPermission("bukkit.command.op.give"));
-        log.info(p.hasPermission("permissions.build")+"");
     }
 
     @EventHandler
