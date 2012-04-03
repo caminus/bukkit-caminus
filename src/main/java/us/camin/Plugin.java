@@ -28,6 +28,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.ChatColor;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -106,7 +107,7 @@ public class Plugin extends JavaPlugin {
         }
         if (motd != null) {
             for(String msg : motd) {
-                sender.sendMessage(msg);
+                sender.sendMessage(msg.replace('&', ChatColor.COLOR_CHAR));
             }
         }
     }
