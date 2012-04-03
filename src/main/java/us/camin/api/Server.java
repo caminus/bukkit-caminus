@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.InetSocketAddress;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -74,7 +75,6 @@ public class Server {
         conn.setRequestMethod(method);
         if (params.size() > 0) {
             conn.setDoOutput(true);
-            DataOutputStream out = new DataOutputStream(conn.getOutputStream());
             Set<Map.Entry<String, String>> values = params.entrySet();
             Iterator<Map.Entry<String, String>> it = values.iterator();
             StringBuilder sb = new StringBuilder();
@@ -88,6 +88,7 @@ public class Server {
             String postData = sb.substring(0, sb.length()-1);
             conn.setFixedLengthStreamingMode(postData.length());
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            DataOutputStream out = new DataOutputStream(conn.getOutputStream());
             out.writeBytes(postData);
         }
         return readJSON(conn);
@@ -124,6 +125,14 @@ public class Server {
 
     public JSONObject get(String path) throws IOException {
         return exec(path, "GET");
+    }
+
+    public JSONObject post(String path, HashMap<String, String> params) throws MalformedURLException, IOException {
+        try {
+            return exec(path, "POST", params);
+        } catch (ProtocolException e) {
+            return null;
+        }
     }
 
     public JSONObject put(String path, HashMap<String, String> params) throws MalformedURLException, IOException {
@@ -214,5 +223,32 @@ public class Server {
             return false;
         }
         return true;
+    }
+
+    public void closeSession(String player) throws IOException {
+        log.info("Closing session for "+player);
+        get("server/session/"+player+"/close");
+    }
+
+    public ValidationResponse openSession(String player, InetSocketAddress sourceAddr) throws IOException {
+        log.info("Opening session for "+player);
+        ValidationResponse resp = new ValidationResponse();
+        HashMap<String, String> params = new HashMap<String, String>();
+        //params.put("ip", sourceAddr.toString());
+        params.put("ip", "");
+        JSONObject jsonObj = post("server/session/"+player+"/new", params);
+        resp.valid = jsonObj.optBoolean("success");
+        resp.errorMessage = jsonObj.optString("error");
+        resp.sessionId = jsonObj.optInt("sessionId");
+        try {
+            JSONArray perms = jsonObj.getJSONArray("permissions");
+            resp.permissions = new String[perms.length()];
+            for (int i = 0;i<perms.length();i++) {
+                resp.permissions[i] = perms.optString(i);
+            }
+        } catch (JSONException e) {
+            throw new IOException("JSON parse error", e);
+        }
+        return resp;
     }
 }

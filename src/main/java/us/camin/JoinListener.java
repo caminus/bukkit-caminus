@@ -24,6 +24,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import java.io.IOException;
 
@@ -38,27 +40,58 @@ public class JoinListener implements Listener {
         m_plugin = p;
     }
 
-    @EventHandler
-    public void onPlayerLogin(PlayerLoginEvent event) {
-        Player p = event.getPlayer();
+    private void closePlayerSession(Player p) throws IOException {
+        m_plugin.api().closeSession(p.getName());
+    }
+
+    private ValidationResponse openPlayerSession(Player p) throws IOException {
         ValidationResponse resp = null;
-        try {
-            resp = m_plugin.api().validatePlayer(p.getName());
-            if (!resp.valid) {
-                event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, "An active camin.us account is required.");
-                return;
-            }
-        } catch (IOException e) {
-            event.disallow(PlayerLoginEvent.Result.KICK_OTHER, "Camin.us auth server seems down.");
-            return;
+        resp = m_plugin.api().openSession(p.getName(), p.getAddress());
+        if (!resp.valid) {
+            return resp;
         }
+        log.info("Session "+resp.sessionId+" opened for "+p.getName());
         PermissionAttachment att = p.addAttachment(m_plugin);
         for(String perm : resp.permissions) {
             log.info("Granting "+perm);
             att.setPermission(perm, true);
         }
         p.recalculatePermissions();
+        return resp;
     }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        try {
+            closePlayerSession(event.getPlayer());
+        } catch (IOException e) {
+        }
+    }
+
+    @EventHandler
+    public void onPlayerKicked(PlayerKickEvent event) {
+        try {
+            closePlayerSession(event.getPlayer());
+        } catch (IOException e) {
+        }
+    }
+
+    @EventHandler
+    public void onPlayerLogin(PlayerLoginEvent event) {
+        ValidationResponse resp;
+        try {
+            resp = openPlayerSession(event.getPlayer());
+        } catch (IOException e) {
+            event.disallow(PlayerLoginEvent.Result.KICK_OTHER, "Camin.us auth server seems down.");
+            return;
+        }
+        if (!resp.valid) {
+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, resp.errorMessage);
+            return;
+        }
+    }
+
+    static public final String SESSION_METADATA_KEY = "caminus-session-id";
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {

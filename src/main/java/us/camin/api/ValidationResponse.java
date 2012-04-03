@@ -21,5 +21,7 @@ package us.camin.api;
 public class ValidationResponse {
     public boolean valid = false;
     public String[] permissions = new String[0];
+    public String errorMessage;
+    public int sessionId;
 }
 
