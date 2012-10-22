@@ -47,7 +47,7 @@ import java.util.Random;
 import org.apache.commons.codec.binary.Hex;
 
 public class Server {
-	Logger log = Logger.getLogger("Caminus.API");
+    Logger log = Logger.getLogger("Caminus.API");
     private String m_url;
     private String m_name;
     private String m_secret;
@@ -216,18 +216,49 @@ public class Server {
 
     public boolean pingAPI() {
         log.info("Pinging API server to verify credentials");
+        JSONObject response;
         try {
-            get("server/whoami");
+            response = get("server/whoami");
         } catch (IOException e) {
             log.log(Level.SEVERE, "Could not ping API server.", e);
             return false;
         }
-        return true;
+        log.info("Connected to server running "+response.optString("server-version")+", api "+response.optInt("api-version"));
+        return response.optInt("api-version") == 2;
     }
 
     public void closeSession(String player) throws IOException {
         log.info("Closing session for "+player);
         get("server/session/"+player+"/close");
+    }
+
+    public void notifyEventHandled(ServerEvent event) throws IOException {
+      log.info("Closing event "+event.id);
+      HashMap<String, String> params = new HashMap<String, String>();
+      params.put("job", Integer.toString(event.id));
+      post("server/events", params);
+    }
+
+    public ServerEvent[] pollEventQueue() throws IOException {
+        log.info("Polling server for events");
+        JSONObject jsonObj = get("server/events");
+        JSONArray eventList;
+        try {
+          eventList = jsonObj.getJSONArray("events");
+        } catch (JSONException e) {
+          return new ServerEvent[0];
+        }
+
+        ServerEvent[] events = new ServerEvent[eventList.length()];
+        for (int i = 0;i<eventList.length();i++) {
+          try{
+            events[i] = ServerEvent.fromJSON(eventList.getJSONObject(i));
+          } catch (JSONException e) {
+            log.log(Level.SEVERE, "Bad JSON", e);
+            events[i] = null;
+          }
+        }
+        return events;
     }
 
     public ValidationResponse openSession(String player, InetSocketAddress sourceAddr) throws IOException {

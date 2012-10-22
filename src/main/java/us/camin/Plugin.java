@@ -17,6 +17,7 @@ package us.camin;
     along with Caminus.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,8 +37,11 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 import us.camin.api.Server;
+import us.camin.api.ServerEvent;
+import us.camin.api.BroadcastEvent;
 
 public class Plugin extends JavaPlugin {
 
@@ -46,6 +50,7 @@ public class Plugin extends JavaPlugin {
     private JoinListener m_listener;
     private MOTDCommand m_motdCommand;
     private VomitCommand m_vomitCommand;
+    private ServerEventPoller m_eventPoll;
 
     public Server api() {
         return m_api;
@@ -55,6 +60,23 @@ public class Plugin extends JavaPlugin {
 		log.info("[Caminus] Plugin disabled");
         m_api = null;
 	}
+
+  public void handleEvent(ServerEvent e) {
+        if (e instanceof BroadcastEvent) {
+            final BroadcastEvent evt = (BroadcastEvent)(e);
+            getServer().getScheduler().callSyncMethod(this, new Callable<Void>() {
+                public Void call() {
+                    getServer().broadcastMessage(evt.message);
+                    return null;
+                }
+            });
+        }
+        try {
+          m_api.notifyEventHandled(e);
+        } catch (IOException ex) {
+          log.severe("Could not close out event. Duplicates will happen!!!");
+        }
+  }
 
 	public void onEnable() {
         PluginManager pm = this.getServer().getPluginManager();
@@ -74,6 +96,8 @@ public class Plugin extends JavaPlugin {
 
         pm.registerEvents(m_listener, this);
 
+        m_eventPoll = new ServerEventPoller(this);
+
         m_motdCommand = new MOTDCommand(this);
         getCommand("motd").setExecutor(m_motdCommand);
         m_vomitCommand = new VomitCommand(this);
@@ -88,6 +112,7 @@ public class Plugin extends JavaPlugin {
         sm.register(Economy.class, econAPI, this, ServicePriority.High);
 
         log.info("[Caminus] Plugin enabled");
+        getServer().getScheduler().scheduleAsyncDelayedTask(this, m_eventPoll);
 	}
 
     public void checkFreeHalfDoorDay(Player sender) {
