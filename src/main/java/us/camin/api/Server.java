@@ -42,6 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONStringer;
 
 import java.util.Random;
 import org.apache.commons.codec.binary.Hex;
@@ -91,7 +92,9 @@ public class Server {
             DataOutputStream out = new DataOutputStream(conn.getOutputStream());
             out.writeBytes(postData);
         }
-        return readJSON(conn);
+        JSONObject ret = readJSON(conn);
+        conn.disconnect();
+        return ret;
     }
 
     public HttpURLConnection open(String path) throws MalformedURLException, IOException {
@@ -237,6 +240,22 @@ public class Server {
       HashMap<String, String> params = new HashMap<String, String>();
       params.put("job", Integer.toString(event.id));
       post("server/events", params);
+    }
+
+    public void sendEvents(ClientEvent[] event) throws JSONException, IOException {
+        log.info("Submitting events");
+        JSONStringer out = new JSONStringer();
+        out.object();
+        out.key("events");
+        out.array();
+        for (ClientEvent evt : event) {
+          out.value(evt.toJSON());   
+        }
+        out.endArray();
+        out.endObject();
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("events", out.toString());
+        put("server/events", params);
     }
 
     public ServerEvent[] pollEventQueue() throws IOException {

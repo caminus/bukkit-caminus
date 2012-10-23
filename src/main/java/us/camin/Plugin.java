@@ -42,6 +42,9 @@ import java.util.concurrent.Callable;
 import us.camin.api.Server;
 import us.camin.api.ServerEvent;
 import us.camin.api.BroadcastEvent;
+import us.camin.api.PlayerMessageEvent;
+import us.camin.api.ClientEvent;
+import org.json.JSONException;
 
 public class Plugin extends JavaPlugin {
 
@@ -58,7 +61,8 @@ public class Plugin extends JavaPlugin {
 
 	public void onDisable() {
 		log.info("[Caminus] Plugin disabled");
-        m_api = null;
+    m_eventPoll.stop();
+    m_api = null;
 	}
 
   public void handleEvent(ServerEvent e) {
@@ -70,11 +74,31 @@ public class Plugin extends JavaPlugin {
                     return null;
                 }
             });
+        } else if (e instanceof PlayerMessageEvent) {
+            final PlayerMessageEvent evt = (PlayerMessageEvent)(e);
+            getServer().getScheduler().callSyncMethod(this, new Callable<Void>() {
+                public Void call() {
+                    getServer().getPlayer(evt.player).sendMessage(evt.message);
+                    return null;
+                }
+            });
         }
         try {
           m_api.notifyEventHandled(e);
         } catch (IOException ex) {
           log.severe("Could not close out event. Duplicates will happen!!!");
+        }
+  }
+
+  public void sendEvent(ClientEvent event) {
+        ClientEvent[] events = new ClientEvent[1];
+        events[0] = event;
+        try {
+          api().sendEvents(events);
+        } catch (JSONException e) {
+          log.log(Level.SEVERE, "Could not encode event", e);
+        } catch (IOException e) {
+          log.log(Level.SEVERE, "Could not submit event, it is lost forever!", e);
         }
   }
 

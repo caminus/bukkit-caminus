@@ -28,10 +28,13 @@ import org.bukkit.scheduler.BukkitScheduler;
 
 public class ServerEventPoller implements Runnable {
     private Plugin m_plugin;
+    private boolean m_running;
+    private int m_taskid;
     Logger log = Logger.getLogger("CaminusEventPoll");
 
     public ServerEventPoller(Plugin plugin) {
         m_plugin = plugin;
+        m_running = true;
     }
 
     public void run() {
@@ -41,11 +44,19 @@ public class ServerEventPoller implements Runnable {
         events = m_plugin.api().pollEventQueue();
       } catch (IOException e) {
       }
-      for(ServerEvent e : events) {
-          m_plugin.handleEvent(e);
+      if (m_running) {
+          for(ServerEvent e : events) {
+              m_plugin.handleEvent(e);
+          }
+          final BukkitScheduler scheduler = m_plugin.getServer().getScheduler();
+          m_taskid = scheduler.scheduleAsyncDelayedTask(m_plugin, this);
+          log.info("Events handled.");
       }
-      final BukkitScheduler scheduler = m_plugin.getServer().getScheduler();
-      scheduler.scheduleAsyncDelayedTask(m_plugin, this);
-      log.info("Events handled.");
+    }
+
+    public void stop() {
+      BukkitScheduler scheduler = m_plugin.getServer().getScheduler();
+      scheduler.cancelTask(m_taskid);
+      m_running  = false;
     }
 }

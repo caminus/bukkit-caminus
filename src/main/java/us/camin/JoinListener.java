@@ -20,16 +20,28 @@ package us.camin;
 
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import java.io.IOException;
 
 import us.camin.api.ValidationResponse;
+import us.camin.api.ClientEvent;
+import us.camin.api.BlockEvent;
+import us.camin.api.ChatEvent;
+import us.camin.api.DeathEvent;
+import us.camin.api.MurderEvent;
+import us.camin.api.WeatherEvent;
 
 public class JoinListener implements Listener {
 	Logger log = Logger.getLogger("Caminus.Join");
@@ -97,5 +109,44 @@ public class JoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         m_plugin.sendMOTD(event.getPlayer());
         m_plugin.checkFreeHalfDoorDay(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerChat(PlayerChatEvent event) {
+        ChatEvent evt = new ChatEvent(event.getPlayer().getName(), event.getMessage());
+        m_plugin.sendEvent(evt);
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        BlockEvent evt = new BlockEvent(event.getPlayer().getName(), event.getBlock(), BlockEvent.Type.BREAK);
+        m_plugin.sendEvent(evt);
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        BlockEvent evt = new BlockEvent(event.getPlayer().getName(), event.getBlock(), BlockEvent.Type.PLACE);
+        m_plugin.sendEvent(evt);
+    }
+
+    @EventHandler
+    public void onWeather(WeatherChangeEvent event) {
+        WeatherEvent evt = new WeatherEvent(event.getWorld().getName(), event.toWeatherState());
+        m_plugin.sendEvent(evt);
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player target = event.getEntity();
+        Entity source = target.getKiller();
+        System.out.println("Target: "+target.getName()+" killed by: "+source);
+        ClientEvent evt = new DeathEvent(target.getName(), event.getDeathMessage());
+        m_plugin.sendEvent(evt);
+        if (source instanceof Player) {
+          Player killer = (Player)source;
+          System.out.println("It was MURDER!");
+          evt = new MurderEvent(target.getName(), killer.getName());
+          m_plugin.sendEvent(evt);
+        }
     }
 }
