@@ -139,12 +139,10 @@ public class JoinListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player target = event.getEntity();
         Entity source = target.getKiller();
-        System.out.println("Target: "+target.getName()+" killed by: "+source);
         ClientEvent evt = new DeathEvent(target.getName(), event.getDeathMessage());
         m_plugin.sendEvent(evt);
         if (source instanceof Player) {
           Player killer = (Player)source;
-          System.out.println("It was MURDER!");
           evt = new MurderEvent(target.getName(), killer.getName());
           m_plugin.sendEvent(evt);
         }
