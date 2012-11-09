@@ -34,12 +34,18 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Villager;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
+import org.bukkit.World;
 
 import net.milkbowl.vault.economy.Economy;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.List;
 import java.util.logging.Level;
 import java.io.IOException;
 import java.util.ListIterator;
@@ -73,6 +79,7 @@ public class Plugin extends JavaPlugin {
 		log.info("[Caminus] Plugin disabled");
     m_eventPoll.stop();
     m_api = null;
+    saveVaultmasters();
     for (Villager v : m_vaultmasters) {
       v.remove();
     }
@@ -143,6 +150,39 @@ public class Plugin extends JavaPlugin {
       return m_vaultmasters;
   }
 
+  public void reloadVaultmasters() {
+    Configuration config = getConfig();
+    List<Map<?, ?>> npcConfigs = config.getMapList("npcs/vaultmasters");
+    for(Map<?, ?> c : npcConfigs) {
+      double x = (Integer)c.get("x");
+      double y = (Integer)c.get("y");
+      double z = (Integer)c.get("z");
+      String worldName = (String)c.get("world");
+      World world = getServer().getWorld(worldName);
+      Location loc = new Location(world, x, y, z);
+      Villager vaultmaster = (Villager)world.spawnCreature(loc, EntityType.VILLAGER);
+      addVaultmaster(vaultmaster);
+    }
+  }
+
+  public void saveVaultmasters() {
+    Configuration config = getConfig();
+    ArrayList<Map<String, Object>> npcConfigs = new ArrayList<Map<String, Object>>();
+    int i = 0;
+    for (Villager v : m_vaultmasters) {
+      Location loc = v.getLocation();
+      Map<String, Object> vaultConfig = new HashMap<String, Object>();
+      vaultConfig.put("x", loc.getBlockX());
+      vaultConfig.put("y", loc.getBlockY());
+      vaultConfig.put("z", loc.getBlockZ());
+      vaultConfig.put("world", loc.getWorld().getName());
+      npcConfigs.add(vaultConfig);
+      i++;
+    }
+    config.set("npcs/vaultmasters", npcConfigs);
+    saveConfig();
+  }
+
 	public void onEnable() {
         m_vaultmasters = new ArrayList<Villager>();
         m_vaultInventories = new HashMap<String, Inventory>();
@@ -180,6 +220,8 @@ public class Plugin extends JavaPlugin {
         Economy econAPI = new EconomyAPI(this);
         ServicesManager sm = getServer().getServicesManager();
         sm.register(Economy.class, econAPI, this, ServicePriority.High);
+
+        reloadVaultmasters();
 
         log.info("[Caminus] Plugin enabled");
         getServer().getScheduler().scheduleAsyncDelayedTask(this, m_eventPoll);
