@@ -28,15 +28,21 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Villager;
 
 import net.milkbowl.vault.economy.Economy;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
+import java.util.ListIterator;
 import java.util.concurrent.Callable;
 
 import us.camin.api.Server;
@@ -44,6 +50,8 @@ import us.camin.api.ServerEvent;
 import us.camin.api.BroadcastEvent;
 import us.camin.api.PlayerMessageEvent;
 import us.camin.api.ClientEvent;
+import us.camin.api.VaultModifyEvent;
+import us.camin.api.PlayerVaultSlot;
 import org.json.JSONException;
 
 public class Plugin extends JavaPlugin {
@@ -53,7 +61,9 @@ public class Plugin extends JavaPlugin {
     private JoinListener m_listener;
     private MOTDCommand m_motdCommand;
     private VomitCommand m_vomitCommand;
+    private VaultCommand m_vaultCommand;
     private ServerEventPoller m_eventPoll;
+    private ArrayList<Villager> m_vaultmasters;
 
     public Server api() {
         return m_api;
@@ -63,6 +73,9 @@ public class Plugin extends JavaPlugin {
 		log.info("[Caminus] Plugin disabled");
     m_eventPoll.stop();
     m_api = null;
+    for (Villager v : m_vaultmasters) {
+      v.remove();
+    }
 	}
 
   public void handleEvent(ServerEvent e) {
@@ -79,6 +92,26 @@ public class Plugin extends JavaPlugin {
             getServer().getScheduler().callSyncMethod(this, new Callable<Void>() {
                 public Void call() {
                     getServer().getPlayer(evt.player).sendMessage(evt.message);
+                    return null;
+                }
+            });
+        } else if (e instanceof VaultModifyEvent) {
+            final VaultModifyEvent evt = (VaultModifyEvent)(e);
+            getServer().getScheduler().callSyncMethod(this, new Callable<Void>() {
+                public Void call() {
+                    Inventory inv;
+                    try {
+                        inv = vaultInventory(getServer().getPlayer(evt.player));
+                    } catch (IOException e) {
+                        return null;
+                    }
+                    for (PlayerVaultSlot s : evt.contents) {
+                        if (s.quantity == -1) {
+                            inv.clear(s.position);
+                        } else {
+                            inv.setItem(s.position, new ItemStack(s.item, s.quantity, s.damage, s.data));
+                        }
+                    }
                     return null;
                 }
             });
@@ -102,7 +135,17 @@ public class Plugin extends JavaPlugin {
         }
   }
 
+  public void addVaultmaster(Villager v) {
+      m_vaultmasters.add(v);
+  }
+
+  public ArrayList<Villager> vaultmasters() {
+      return m_vaultmasters;
+  }
+
 	public void onEnable() {
+        m_vaultmasters = new ArrayList<Villager>();
+        m_vaultInventories = new HashMap<String, Inventory>();
         PluginManager pm = this.getServer().getPluginManager();
         m_listener = new JoinListener(this);
         Configuration conf = getConfig();
@@ -126,6 +169,9 @@ public class Plugin extends JavaPlugin {
         getCommand("motd").setExecutor(m_motdCommand);
         m_vomitCommand = new VomitCommand(this);
         getCommand("vomit").setExecutor(m_vomitCommand);
+
+        m_vaultCommand = new VaultCommand(this);
+        getCommand("vaultmaster").setExecutor(m_vaultCommand);
 
         CommandExecutor economyCommand = new EconomyCommand(this);
         getCommand("balance").setExecutor(economyCommand);
@@ -159,5 +205,51 @@ public class Plugin extends JavaPlugin {
                 sender.sendMessage(msg.replace('&', ChatColor.COLOR_CHAR));
             }
         }
+    }
+
+    private HashMap<String, Inventory> m_vaultInventories;
+
+    public void saveVault(Player p, Inventory inv) throws IOException {
+        ListIterator<ItemStack> items = inv.iterator();
+        PlayerVaultSlot[] vault = new PlayerVaultSlot[inv.getSize()];
+        int i = 0;
+        while(items.hasNext()) {
+            ItemStack item = items.next();
+            PlayerVaultSlot slot = new PlayerVaultSlot();
+            slot.position = i;
+            slot.quantity = -1;
+            if (item != null) {
+              slot.item = item.getTypeId();
+              slot.quantity = item.getAmount();
+              slot.damage = item.getDurability();
+              slot.data = item.getData().getData();
+            }
+            vault[i] = slot;
+            i++;
+        }
+        log.info("Saving "+vault.length+" items to vault for "+p.getName());
+        try {
+            m_api.saveVault(p.getName(), vault);
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
+    }
+
+    public void forgetVaultInventory(Player p) {
+        if (m_vaultInventories.containsKey(p.getName())) {
+            m_vaultInventories.remove(p.getName());
+        }
+    }
+
+    public Inventory vaultInventory(Player p) throws IOException {
+        if (!m_vaultInventories.containsKey(p.getName())) {
+            Inventory inv = p.getServer().createInventory(p, InventoryType.CHEST);
+            m_vaultInventories.put(p.getName(), inv);
+            PlayerVaultSlot[] vault = m_api.loadVault(p.getName());
+            for(int i = 0;i<vault.length;i++) {
+                inv.setItem(vault[i].position, new ItemStack(vault[i].item, vault[i].quantity, vault[i].damage, vault[i].data));
+            }
+        }
+        return m_vaultInventories.get(p.getName());
     }
 }

@@ -19,8 +19,11 @@ package us.camin;
 
 
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerLoginEvent;
@@ -28,12 +31,20 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.entity.Arrow;
 import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import us.camin.api.ValidationResponse;
 import us.camin.api.ClientEvent;
@@ -101,6 +112,7 @@ public class JoinListener implements Listener {
             event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, resp.errorMessage);
             return;
         }
+        m_plugin.forgetVaultInventory(event.getPlayer());
     }
 
     static public final String SESSION_METADATA_KEY = "caminus-session-id";
@@ -145,6 +157,64 @@ public class JoinListener implements Listener {
           Player killer = (Player)source;
           evt = new MurderEvent(target.getName(), killer.getName());
           m_plugin.sendEvent(evt);
+        }
+    }
+
+    @EventHandler
+    public void onVaultmasterInteract(PlayerInteractEntityEvent event) {
+        System.out.println("Interacted with someone!");
+        ArrayList<Villager> vaultmasters = m_plugin.vaultmasters();
+        Villager vaultmaster = null;
+        boolean found = false;
+        for(Villager v : vaultmasters) {
+            if (event.getRightClicked() == v) {
+                System.out.println("It was one of ours!");
+                event.setCancelled(true);
+                found = true;
+                vaultmaster = v;
+                break;
+            }
+        }
+        if (!found)
+          return;
+        Inventory inv;
+        try {
+            inv = m_plugin.vaultInventory(event.getPlayer());
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Couldn't fetch user's vault!", e);
+            event.getPlayer().sendMessage("Couldn't fetch your vault! api.camin.us might be down.");
+            return;
+        }
+        event.getPlayer().openInventory(inv);
+    }
+
+    @EventHandler
+    public void onVaultmasterInventoryChange(InventoryCloseEvent event) {
+        Player p = (Player)event.getPlayer();
+        try {
+            m_plugin.saveVault(p, m_plugin.vaultInventory(p));
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Couldn't save user's vault!", e);
+            p.sendMessage("Your vault couldn't be saved to the server!");
+            p.sendMessage("Your items are still held by the vaultmaster, but might vanish.");
+        }
+    }
+
+    @EventHandler
+    public void onVaultmasterAttacked(EntityDamageEvent event) {
+        Entity target = event.getEntity();
+        if (target instanceof Villager) {
+            Villager v = (Villager)target;
+            if (m_plugin.vaultmasters().contains(target)) {
+                if (event instanceof EntityDamageByEntityEvent) {
+                    EntityDamageByEntityEvent e = (EntityDamageByEntityEvent)event;
+                    if (e.getDamager() instanceof LivingEntity) {
+                        v.setTarget((LivingEntity)e.getDamager());
+                        //Projectile weapon = v.launchProjectile(Arrow.class);
+                    }
+                }
+                v.setHealth(v.getMaxHealth());
+            }
         }
     }
 }

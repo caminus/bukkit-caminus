@@ -301,4 +301,48 @@ public class Server {
         }
         return resp;
     }
+
+    public PlayerVaultSlot[] loadVault(String player) throws IOException {
+        log.info("Opening vault for "+player);
+        PlayerVaultSlot[] vault;
+        JSONObject jsonObj = get("server/vault/"+player);
+        try {
+            JSONArray items = jsonObj.getJSONArray("items");
+            vault = new PlayerVaultSlot[items.length()];
+            for(int i = 0;i<items.length();i++) {
+                JSONObject slot = items.getJSONObject(i);
+                vault[i] = new PlayerVaultSlot();
+                vault[i].item = slot.optInt("item");
+                vault[i].quantity = slot.optInt("quantity");
+                vault[i].damage = (short)slot.optInt("damage");
+                vault[i].data = (byte)slot.optInt("data");
+                vault[i].position = slot.optInt("position");
+            }
+        } catch (JSONException e) {
+            throw new IOException("JSON parse error", e);
+        }
+        return vault;
+    }
+
+    public void saveVault(String player, PlayerVaultSlot[] vault) throws IOException, JSONException {
+        log.info("Saving vault for "+player);
+        JSONStringer out = new JSONStringer();
+        out.object();
+        out.key("items");
+        out.array();
+        for (PlayerVaultSlot item : vault) {
+            out.object();
+            out.key("item").value(item.item);
+            out.key("quantity").value(item.quantity);
+            out.key("damage").value(item.damage);
+            out.key("data").value(item.data);
+            out.key("position").value(item.position);
+            out.endObject();
+        }
+        out.endArray();
+        out.endObject();
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put("contents", out.toString());
+        put("server/vault/"+player, params);
+    }
 }

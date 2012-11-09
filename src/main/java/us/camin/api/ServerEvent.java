@@ -47,6 +47,8 @@ public class ServerEvent {
             return BroadcastEvent.fromJSON(payload, id);
         } else if (type.equals("player-message")) {
             return PlayerMessageEvent.fromJSON(payload, id);
+        } else if (type.equals("vault-contents")) {
+            return VaultModifyEvent.fromJSON(payload, id);
         } else {
             log.log(Level.SEVERE, "Unhandled event type: "+type);
             return null;
