@@ -84,7 +84,7 @@ public class EconomyAPI implements Economy {
     private EconomyResponse adjustPlayer(String playerName, double amount) {
         BalanceAdjustResponse resp;
         try {
-            resp = m_p.api().adjustBalance(playerName, -amount);
+            resp = m_p.api().adjustBalance(playerName, amount);
         } catch (IOException e) {
             return new EconomyResponse(0, 0, ResponseType.FAILURE, "Could not contact api.camin.us.");
         }
@@ -97,7 +97,7 @@ public class EconomyAPI implements Economy {
 
     @Override
     public EconomyResponse withdrawPlayer(String playerName, double amount) {
-        return adjustPlayer(playerName, amount);
+        return adjustPlayer(playerName, -amount);
     }
 
     @Override
