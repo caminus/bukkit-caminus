@@ -97,7 +97,7 @@ public class EconomyAPI implements Economy {
 
     @Override
     public EconomyResponse withdrawPlayer(String playerName, double amount) {
-        return adjustPlayer(playerName, amount);
+        return adjustPlayer(playerName, -amount);
     }
 
     @Override
